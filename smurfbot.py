@@ -14,9 +14,9 @@ class Main(IPlugin):
 		self._lastchecked = datetime.datetime.now()
 		self._MaxInterval = datetime.timedelta(seconds = 600)
 		self._filename = 'smurfs.db'
-		self._channels = ['badev']
-		self._clans = ['[teh]']
-		self._users = ['_koshi_']
+		self._channels = tasc.main.config.get_optionlist('join_channels', 'channels')
+		self._clans = tasc.main.config.get_optionlist('smurfbot', 'clans')
+		self._users = tasc.main.config.get_optionlist('smurfbot', 'users')
 		self._silent = False
 		self._mylist = dict()
 
