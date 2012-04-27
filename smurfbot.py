@@ -33,38 +33,6 @@ class Main(IPlugin):
 	def onconnected(self):
 		self._cmd_smurfs('','',0)
 
-	def onsaid(self,chan,user,data):
-		numtalks=numtalks+1;
-		#print 'talk: %i call: %i time: %s' % (talkcounter,callcounter,datetime.datetime.now().isoformat())
-		talkcounter=talkcounter+1
-
-		if chan == 'main':
-			if lastchecked + MaxInterval < datetime.datetime.now(): 
-				self._cmd_smurfs('','teh')
-				lastchecked = datetime.datetime.now()
-		if chan == channel or chan==channel2 or chan==channel3:
-			nowchan=channel
-			if nowchan!=chan:
-				nowchan=channel2
-			nowchan=chan
-			if data.startswith(command)==True:
-				if user.find('[teh]lost')>=0:
-					socket.send('SAY '+channel+' Get lost.')
-				else:
-					if user.find(clanfilter)>=0 or user.find('[[ITER]]Satirik')>=0 or user.find(clanfilter2)>=0 or user.find(clanfilter3)>=0 or user.find(clanfilter4)>=0:
-						data= data.split(' ',2)
-						if len(data)>1:
-							data= data[1].strip()
-							silent=False
-							#print 'calling smurfs...'
-							whosaidit=user
-							self._cmd_smurfs(data,nowchan)
-							
-						else:
-							self._cmd_smurfs('',nowchan)
-					else:
-						socket.send('SAY '+nowchan+' Smurf checking is available for '+clanfilter+' and '+clanfilter2 +' and '+clanfilter3+' members only')
-
 
 	def cmd_clientstatus(self,args,cmd):
 		name=args[0]
@@ -101,34 +69,30 @@ class Main(IPlugin):
 		user = args[1]
 		if len(args) > 3:
 			smurfname = args[3]
-		numtalks = numtalks+1
+		numtalks = numtalks + 1
 		#print 'talk: %i call: %i time: %s' % (talkcounter,callcounter,datetime.datetime.now().isoformat())
-		talkcounter = talkcounter+1
+		talkcounter = talkcounter + 1
 
 		if chan == 'main':
-			if lastchecked + MaxInterval < datetime.datetime.now(): 
+			if (lastchecked + MaxInterval) < datetime.datetime.now(): 
 				self._cmd_smurfs('','teh',socket)
 				lastchecked = datetime.datetime.now()
 		if chan in channels:
 			nowchan=chan
 			if data == 'smurfs':
-				#print 'correct command'
-				f=open(logfile,'a+')
-				line= '%s	%s	%s	%s' % (datetime.datetime.now().isoformat(), user, smurfname, nowchan) 
-				f.write(line+'\n')
-				f.close()
+				self.logger.info('%s	%s	%s	%s' % (datetime.datetime.now().isoformat(), user, smurfname, nowchan))
 				
-				if user in users or user.find(clans[0])>=0 or user.find(clans[1])>=0 or user.find(clans[2])>=0:# or user.find(clans[3])>=0:
-					if len(args)>3:
-						silent=False
-						whosaidit=user
-						good( 'calling smurfs...for:'+smurfname+' in:' +nowchan+' by:'+whosaidit)
+				if user in users or user.find(clans[0]) >= 0 or user.find(clans[1]) >= 0 or user.find(clans[2])>=0:# or user.find(clans[3])>=0:
+					if len(args) > 3:
+						silent = False
+						whosaidit = user
+						self.logger.info( 'calling smurfs...for:'+smurfname+' in:' +nowchan+' by:'+whosaidit)
 						self._cmd_smurfs(smurfname,nowchan,socket)
 					else:
 						self._cmd_smurfs('',nowchan,socket)
 				else:
-					bad('Unathorized usage by: '+user)
-					socket.send('SAY '+nowchan+' Smurf checking is available for '+clans[0]+' and '+clans[1] +' and '+clans[2]+' members only\n')
+					self.logger.error('Unathorized usage by: '+user)
+					self.tasclient.say(nowchan, ' Smurf checking is available for '+clans[0]+' and '+clans[1] +' and '+clans[2]+' members only')
 
 	def _cmd_smurfs(smurf,nowchan,socket):
 		silent=False
@@ -172,7 +136,6 @@ class Main(IPlugin):
 		numsmurfs=0
 		#db=users
 
-		
 		if smurf!='':
 			for k,v in mylist.iteritems():
 				if smurf==v[0] :
@@ -186,7 +149,7 @@ class Main(IPlugin):
 						v=map(str, v)
 						message = '<'+botname+'> %s: flag: %s  CPU=%smHz  rank=%s last online:%s ip:%s\n' % (v[0],v[1],v[2],v[3],v[4],v[5])
 						if silent==False:
-							socket.send('SAYPRIVATE '+whosaidit+' '+message)
+							self.tasclient.saypm(whosaidit, message)
 						numsmurfs=numsmurfs+1
 						if numsmurfs%100==0:
 							print "sleeping 5 so i dont get kicked"
@@ -195,12 +158,12 @@ class Main(IPlugin):
 				message = '<'+botname+'> No smurf(s) found for: %s  out of %i entries, results sent in PM\n' % (smurf, dbsize)
 				notice(message)
 				if silent==False:
-					socket.send('SAY '+nowchan+' '+message)
-					socket.send('SAYPRIVATE '+whosaidit+' '+message)
+					self.tasclient.say(nowchan, message)
+					self.tasclient.saypm(whosaidit, message)
 			if numsmurfs>0:
 				message= '<'+botname+'> %i smurf(s) found for %s, out of %i entries, results sent in PM\n' % (numsmurfs,smurf,dbsize)
 				notice(message)
 				if silent==False:
-					socket.send('SAY '+nowchan+' '+message)
-					socket.send('SAYPRIVATE '+whosaidit+' '+message)	
+					self.tasclient.say(nowchan, message)
+					self.tasclient.saypm(whosaidit, message)	
 			#silent=True
